@@ -4,7 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Graph Bot Battle</title>
+<link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0a0f1e">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&display=swap">
 <style>
 :root{--bg:#0a0f1e;--card:#141c34;--line:#2a3a68;--ink:#eaf0ff;--mute:#98a9d3;--a:#35c3ff;--b:#ff9a2e;--gold:#ffd84d;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -546,5 +549,6 @@ muted=!!save.muted;$('snd').textContent=muted?'🔇':'🔊';
 {const day=new Date().toDateString();if(save.day!=day){save.day=day;save.coins+=20;document.querySelector('.sub').textContent='Daily bonus: +20 🪙'}}
 reset();st='over';$('big').dataset.msg='';menu();requestAnimationFrame(frame);
 </script>
+<script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
 </html>
