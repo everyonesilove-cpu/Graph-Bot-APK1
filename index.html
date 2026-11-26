@@ -80,7 +80,7 @@ h1{margin:0;text-align:center;font-size:36px;color:#8cf0ff}
 const $=i=>document.getElementById(i),cv=$('c'),g=cv.getContext('2d'),S=600,U=20;
 const R=(a,b)=>a+Math.random()*(b-a),D=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),pick=a=>a[Math.random()*a.length|0];
 // kind: [name, color, slider label, description]
-const K={web:['Web','#4dff9a','Bend','Chains to up to 4 foes near the hit.'],parry:['Parry','#a88bff','Bend','Fires a beam, then raises a reflecting shield.'],irr:['Wave','#ff6b5e','Wave','Fires a wobbling wave.'],para:['Loop','#6f8bff','Loop','Fires a looping curve.'],bomb:['Bomber','#ffa033','Bend','Explodes on impact.'],split:['Splitter','#ff4fb3','Bend','Fires three beams at once.'],sniper:['Sniper','#e8eefc','(straight)','Straight shot that pierces circles.'],bounce:['Bouncer','#2ee6e6','(straight)','Shot bounces off the walls.'],boom:['Boomerang','#e0a46a','Width','Flies out and comes back.'],drill:['Drill','#ffe14d','Bend','Digs through circles.'],zig:['Zigzag','#c4f23a','Zigzag','Fires a sharp zigzag.'],lob:['Lob','#ffb36b','Arc','Fires a high lob.'],cubic:['Cubic','#7affc8','Bend','Fires an S-shaped cubic.'],abs:['Abs','#ff8ad8','Bend','Fires a sharp V.'],tan:['Tangent','#8ab4ff','Bend','Fires a wild tangent curve.'],log:['Log','#f5e663','Bend','Rises fast, then flattens.'],spiral:['Spiral','#c59bff','Loop','Spirals outward.'],ripple:['Ripple','#5ee7ff','Wave','Fires a fading ripple.'],saw:['Saw','#ff9d5c','Zigzag','Fires a sawtooth wave.'],stair:['Stair','#b8e986','Bend','Climbs in steps.']};
+const K={web:['Web','#4dff9a','Bend','Chains to up to 4 foes near the hit.'],parry:['Parry','#a88bff','Bend','Fires a beam, then raises a reflecting shield.'],irr:['Wave','#ff6b5e','Wave','Fires a wobbling wave.'],para:['Loop','#6f8bff','Loop','Fires a looping curve.'],bomb:['Bomber','#ffa033','Bend','Explodes on impact.'],split:['Splitter','#ff4fb3','Bend','Fires three beams at once.'],sniper:['Sniper','#e8eefc','(straight)','Straight shot that pierces circles.'],bounce:['Bouncer','#2ee6e6','(straight)','Shot bounces off the walls.'],boom:['Boomerang','#e0a46a','Width','Flies out and comes back.'],drill:['Drill','#ffe14d','Bend','Digs through circles.'],zig:['Zigzag','#c4f23a','Zigzag','Fires a sharp zigzag.'],lob:['Lob','#ffb36b','Arc','Fires a high lob.'],cubic:['Cubic','#7affc8','Bend','Fires an S-shaped cubic.'],abs:['Abs','#ff8ad8','Bend','Fires a sharp V.'],tan:['Tangent','#8ab4ff','Bend','Fires a wild tangent curve.'],log:['Log','#f5e663','Bend','Rises fast, then flattens.'],spiral:['Spiral','#c59bff','Loop','Spirals outward.'],ripple:['Ripple','#5ee7ff','Wave','Fires a fading ripple.'],saw:['Saw','#ff9d5c','Zigzag','Fires a sawtooth wave.'],stair:['Stair','#b8e986','Bend','Climbs in steps.'],d3:['3D','#ff6bff','Depth','Fires a spinning corkscrew. Only the front half of each spin can hit or be blocked.']};
 const KEYS=Object.keys(K),anyKind=()=>pick(KEYS);
 const ITEMS={ghost:['👻 Ghost',30,'Shot passes through circles.'],blast:['💥 Blast',40,'Explosion where the shot ends.'],extra:['⏩ Extra turn',60,'Your team shoots again.'],shield:['🛡️ Shield',25,'Reflects the next shot at you.'],time:['⏱️ +30s',20,'Adds 30 seconds to the match.']};
 const ACH={first:['First win',20],dbl:['Double kill',15],tri:['Triple kill',30],mine:['Mine sweeper',25],champ:['Royale champion',50]};
@@ -179,15 +179,16 @@ function trace(a,b,k=me.kind){
       if(k=='ripple')v=b*.8*Math.exp(-t/400)*Math.sin(t/25);
       if(k=='saw')v=b*.4*((t/50)%2-1);
       if(k=='stair')v=b*.3*Math.floor(t/80);
+      if(k=='d3')v=b*.5*Math.sin(t/20);
       if(k=='boom'){u=250*(1-Math.cos(t/200));v=b*1.5*Math.sin(t/200)}
-      const p={x:me.x+c*u-s*v,y:me.y+s*u+c*v};p.y+=wind*(t/300)**2*40;
+      const p={x:me.x+c*u-s*v,y:me.y+s*u+c*v};p.y+=wind*(t/300)**2*40;const fr=k!='d3'||(p.z=Math.cos(t/20))>0;
       if(k=='bounce')for(const z of 'xy'){const w=((p[z]%1200)+1200)%1200;p[z]=w>S?1200-w:w}
       if(p.x<0||p.x>S||p.y<0||p.y>S)break;
       path.push(p);end=p;
-      const r=blocked(p,k);
+      const r=fr&&blocked(p,k);
       if(r){if(k!='drill'){holes.push({r,p});break}if(!holes.some(h=>D(h.p,p)<12))holes.push({r,p})}
       if(minesOn()&&wrecks.some(w=>D(w,p)<13)){mined=p;break}
-      const foe=foesOf().find(e=>!kills.includes(e)&&D(e,p)<(k=='web'?45:13)+(me.rev?8:0));
+      const foe=fr&&foesOf().find(e=>!kills.includes(e)&&D(e,p)<(k=='web'?45:13)+(me.rev?8:0));
       if(!foe)continue;
       if(k=='web'){anchor=p;break}
       if(foe.shield){reflect=foe;break}
@@ -309,7 +310,7 @@ function next(first){
   me.rev=false;if(rev[turn]&&!royale()){rev[turn]=0;me.rev=me.ghost=true;fx.push({x:me.x,y:me.y-44,vx:0,vy:-.4,l:100,text:'😤 REVENGE SHOT!'});tone(300,.4,'sawtooth',900,.12)}
   job=null;angle=me.x>300?Math.PI:0;st='aim';wait=1;anim=null;
   const N=nerd();$('nerd').hidden=!N;$('knobRow').hidden=N;
-  $('bend').value=['irr','para','boom','zig','ripple','saw','spiral'].includes(me.kind)?50:0;
+  $('bend').value=['irr','para','boom','zig','ripple','saw','spiral','d3'].includes(me.kind)?50:0;
   if(N){dir=me.x>300?-1:1;$('eq').value='';$('dir').textContent=dir>0?'→':'←';say(human()?`You are at (${gx(me).toFixed(1)}, ${gy(me).toFixed(1)}). Type an equation.`:'Bot is solving…')}
   else say(K[me.kind][0]+' Bot'+(human()?': '+K[me.kind][3]+' Drag to aim.':' is aiming…'));
   if(me.brain)say(`Brain (IQ ${iq(turn)}) is calculating…`);
@@ -462,7 +463,7 @@ function frame(now){
   }
   if(anim){
     g.globalAlpha=st=='rest'?Math.max(0,Math.min(1,wait/1.2)):over?0:1;g.lineCap=g.lineJoin='round';
-    for(const p of anim.paths){const q=p.slice(0,Math.floor(anim.i));g.shadowColor=anim.c;g.shadowBlur=10;line(q,anim.c,4);g.shadowBlur=0;const hd=q[q.length-1];if(hd&&st=='fly')circ(hd.x,hd.y,5,'#fff')}
+    for(const p of anim.paths){const q=p.slice(0,Math.floor(anim.i));g.shadowColor=anim.c;g.shadowBlur=10;line(q,anim.c,4);g.shadowBlur=0;if(q.length&&q[0].z!=null)for(const o of q)if(o.z!=null)circ(o.x,o.y,o.z>0?4:1.6,o.z>0?'#fff':'#ffffff55');const hd=q[q.length-1];if(hd&&st=='fly')circ(hd.x,hd.y,5,'#fff')}
     if(anim.i>=anim.len){
       for(const [p,q] of anim.links){line([p,q],anim.c,2);circ(q.x,q.y,4,anim.c)}
       if(anim.blast)circ(anim.blast.x,anim.blast.y,55,'#ff8c1a66');
