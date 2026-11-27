@@ -48,19 +48,38 @@ h1{margin:0;text-align:center;font-size:36px;color:#8cf0ff}
 #go{padding:13px;font-size:19px}
 .item{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding-bottom:10px}.item small{display:block;color:var(--mute)}.item button{min-width:88px}
 @media (prefers-reduced-motion:reduce){button:active:not(:disabled){transform:none}}
+canvas#c{image-rendering:pixelated}
+button,select,input,textarea{border-radius:3px!important;border-width:3px!important;box-shadow:0 4px 0 #0a1020}
+button:active:not(:disabled){box-shadow:0 1px 0 #0a1020;transform:translateY(3px)}
+h1{text-shadow:3px 3px 0 #1b4a6b;letter-spacing:1px}
+.pk{display:flex;gap:6px;align-items:stretch}.pk button{width:46px;padding:0;font-size:18px}
+.pk b{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:48px;background:#10162b;border:3px solid #3b4f86;padding:6px;text-align:center;touch-action:pan-y;cursor:grab;font-weight:500}
+.pk b small{color:#93a4d0;font-size:11px}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9;background:repeating-linear-gradient(#0000 0 3px,#0000000d 3px 4px)}
+.imp{display:flex;gap:6px}.imp input{flex:1;min-width:0;background:#10162b;border:3px solid #3b4f86;padding:8px}
+a.btn{display:block;text-align:center;text-decoration:none;color:var(--ink);background:#202d52;border:3px solid #3b4f86;border-radius:3px;padding:10px;box-shadow:0 4px 0 #0a1020}
+#bld h2{font-size:15px;margin:14px 0 6px;color:#ffd84d}#bld .car{margin:10px 0}#bld .lab,#bld .sub{color:#93a4d0;font-size:13px}#bld .car small{display:block;color:#93a4d0;margin-top:4px;min-height:32px}
+#bld .slot{border:2px dashed #3b4f86;padding:8px;margin-bottom:8px}#bld pre{margin:6px 0;background:#10162b;border:2px solid #3b4f86;padding:10px;font:13px monospace;white-space:pre-wrap;color:#b6ff3c}
+#b_cv{width:192px;height:192px;image-rendering:pixelated;background:#10162b;border:3px solid #3b4f86}#bld input[type=text],#bld textarea{width:100%;background:#10162b;padding:8px}#bld textarea{height:84px;font:12px monospace}
+#b_pts{font-size:18px;color:#4dff9a}#b_pts.bad{color:#ff5c78}.btns{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.btns>*{flex:1 1 40%}
 </style>
 </head>
 <body>
 <div id="menu"><div>
 <h1>Graph Bot Battle</h1>
-<p class="sub">Aim a curve. Take out the other team.</p>
+<p class="sub">Aim a curve. Take out the other team. ✦ Pixel edition</p>
 <div id="wallet"></div>
-<div class="tabs"><button id="tPlay" class="on">Play</button><button id="tShop">Shop</button></div>
+<div class="tabs"><button id="tPlay" class="on">Play</button><button id="tBld">Builder</button><button id="tShop">Shop</button></div>
 <div id="play" class="panel">
 <div id="fields"></div>
 <button id="go" class="on">Start match</button><button id="resume" hidden>Resume match</button><button id="end" hidden>End match</button>
 </div>
 <div id="shop" class="panel" hidden></div>
+<div id="bld" class="panel" hidden>
+<p class="sub">Pick a weapon, then write 3 logic skills: WHEN something happens, DO something. You have 10 points.</p>
+<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><canvas id="b_cv" width="192" height="192" aria-label="Your bot"></canvas><input id="b_nm" type="text" maxlength="14" aria-label="Bot name" value="My Bot"></div>
+<h2>1. Look</h2><div id="b_look"></div><h2>2. Weapon</h2><div id="b_wep"></div><h2>3. Skills</h2><div id="b_sk"></div><div>Points: <span id="b_pts"></span></div><pre id="b_prog"></pre>
+<h2>4. Save</h2><div class="btns"><button id="b_sv" class="on">💾 Save bot</button><button id="b_play">▶ Play</button></div><p id="b_msg" class="sub"></p><textarea id="b_code" readonly aria-label="Bot code to share"></textarea><div class="btns"><button id="b_cp">Copy code</button><button id="b_clr">Delete my bots</button></div></div>
 </div></div>
 <header>
 <div class="team" id="a"><small id="na"></small><b id="sa">0</b></div>
@@ -82,6 +101,8 @@ const R=(a,b)=>a+Math.random()*(b-a),D=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),pick=a
 // kind: [name, color, slider label, description]
 const K={web:['Web','#4dff9a','Bend','Chains to up to 4 foes near the hit.'],parry:['Parry','#a88bff','Bend','Fires a beam, then raises a reflecting shield.'],irr:['Wave','#ff6b5e','Wave','Fires a wobbling wave.'],para:['Loop','#6f8bff','Loop','Fires a looping curve.'],bomb:['Bomber','#ffa033','Bend','Explodes on impact.'],split:['Splitter','#ff4fb3','Bend','Fires three beams at once.'],sniper:['Sniper','#e8eefc','(straight)','Straight shot that pierces circles.'],bounce:['Bouncer','#2ee6e6','(straight)','Shot bounces off the walls.'],boom:['Boomerang','#e0a46a','Width','Flies out and comes back.'],drill:['Drill','#ffe14d','Bend','Digs through circles.'],zig:['Zigzag','#c4f23a','Zigzag','Fires a sharp zigzag.'],lob:['Lob','#ffb36b','Arc','Fires a high lob.'],cubic:['Cubic','#7affc8','Bend','Fires an S-shaped cubic.'],abs:['Abs','#ff8ad8','Bend','Fires a sharp V.'],tan:['Tangent','#8ab4ff','Bend','Fires a wild tangent curve.'],log:['Log','#f5e663','Bend','Rises fast, then flattens.'],spiral:['Spiral','#c59bff','Loop','Spirals outward.'],ripple:['Ripple','#5ee7ff','Wave','Fires a fading ripple.'],saw:['Saw','#ff9d5c','Zigzag','Fires a sawtooth wave.'],stair:['Stair','#b8e986','Bend','Climbs in steps.'],d3:['3D','#ff6bff','Depth','Fires a spinning corkscrew. Only the front half of each spin can hit or be blocked.']};
 const KEYS=Object.keys(K),anyKind=()=>pick(KEYS);
+const CB={},bk=k=>CB[k]?CB[k].base:k,SKL={ghost:'👻 GHOST!',wide:'🎯 WIDE SHOT!',blast:'💥 BLAST!'},TR={always:()=>1,first:n=>n==1,third:n=>n%3==0,behind:(n,a,f)=>a<f,last:(n,a)=>a==1},EF={ghost:()=>me.ghost=true,wide:()=>me.rev=true,blast:()=>armed='blast'};let TC={};
+const regC=(c,i)=>{if(!c||!K[c.base]||!Array.isArray(c.skills))return;c.name=String(c.name).replace(/[^\w ]/g,'').slice(0,14)||'Custom';c.skills=c.skills.filter(q=>TR[q.when]&&EF[q.do]).slice(0,3);const id='c'+i;CB[id]=c;K[id]=[c.name,/^#[0-9a-f]{6}$/i.test(c.color)?c.color:'#ffffff','Bend',String(c.desc||'Custom bot.').slice(0,140)];KEYS.push(id);return id};try{JSON.parse(localStorage.getItem('gbb_custom')||'[]').forEach(regC)}catch(e){}
 const ITEMS={ghost:['👻 Ghost',30,'Shot passes through circles.'],blast:['💥 Blast',40,'Explosion where the shot ends.'],extra:['⏩ Extra turn',60,'Your team shoots again.'],shield:['🛡️ Shield',25,'Reflects the next shot at you.'],time:['⏱️ +30s',20,'Adds 30 seconds to the match.']};
 const ACH={first:['First win',20],dbl:['Double kill',15],tri:['Triple kill',30],mine:['Mine sweeper',25],champ:['Royale champion',50]};
 const THEMES=[['#1b2748','#111a33','#a3b5d9','#5b6e98','#ffffff0d','#ffffff30'],['#4a2640','#251428','#d9a37a','#8a5a52','#ffffff10','#ffffff35'],['#14332a','#0c1f1a','#8fc49a','#4c7a5a','#ffffff0d','#ffffff30'],['#1d3b55','#0f2336','#d6f1ff','#7fb3d1','#ffffff12','#ffffff40'],['#ffffff','#f1f4f8','#a9d1e6','#a9d1e6','#00000012','#000000aa']];
@@ -160,7 +181,7 @@ function traceEq(text){
   return{paths:[path],kills,holes,links:[],reflect:null,blast:mined,mines,len:path.length,c:'#fff'};
 }
 // ---------- skill shots ----------
-function trace(a,b,k=me.kind){
+function trace(a,b,k=me.kind){k=bk(k);
   const paths=[],kills=[],holes=[],links=[];let reflect=null,blast=null,anchor=null,mined=null,mines=[];
   for(const off of k=='split'?[-.22,0,.22]:[0]){
     const c=Math.cos(a+off),s=Math.sin(a+off),path=[];let end=null;
@@ -280,7 +301,7 @@ function brainDraw(d){
 }
 // ---------- match flow ----------
 function reset(){
-  job=null;streak=[];rev=[0,0];ot=0;bots=[];rocks=[];fx=[];bubbles=[];crates=[];gems=[];wrecks=[];zone=999;anim=null;armed=null;extra=false;
+  job=null;streak=[];rev=[0,0];TC={};ot=0;bots=[];rocks=[];fx=[];bubbles=[];crates=[];gems=[];wrecks=[];zone=999;anim=null;armed=null;extra=false;
   const sel=[$('mine').value,$('foe').value],kinds=sel.map(v=>!v||v=='random'?anyKind():v),N=+$('size').value;
   for(let t=0;t<(royale()?0:2);t++){
     $(t?'nb':'na').textContent=kinds[t]=='brain'?'Brain':nerd()?'Team '+'AB'[t]:kinds[t]=='mixed'?'Mixed team':K[kinds[t]][0]+' Bots';
@@ -308,9 +329,10 @@ function next(first){
   extra=false;armed=null;tl=12;wind=tw('wind')?R(-1,1):0;if(tw('loot'))spawn();
   if(royale())me=bots[turn];else{const team=alive(turn);me=team[idx[turn]++%team.length]}
   me.rev=false;if(rev[turn]&&!royale()){rev[turn]=0;me.rev=me.ghost=true;fx.push({x:me.x,y:me.y-44,vx:0,vy:-.4,l:100,text:'😤 REVENGE SHOT!'});tone(300,.4,'sawtooth',900,.12)}
+  const cs=CB[me.kind];if(cs){const n=TC[turn]=(TC[turn]||0)+1,al=alive(turn).length,fo=alive(1-turn).length;cs.skills.forEach(q=>{if(TR[q.when](n,al,fo)){EF[q.do]();fx.push({x:me.x,y:me.y-44,vx:0,vy:-.4,l:90,text:SKL[q.do]})}})}
   job=null;angle=me.x>300?Math.PI:0;st='aim';wait=1;anim=null;
   const N=nerd();$('nerd').hidden=!N;$('knobRow').hidden=N;
-  $('bend').value=['irr','para','boom','zig','ripple','saw','spiral','d3'].includes(me.kind)?50:0;
+  $('bend').value=['irr','para','boom','zig','ripple','saw','spiral','d3'].includes(bk(me.kind))?50:0;
   if(N){dir=me.x>300?-1:1;$('eq').value='';$('dir').textContent=dir>0?'→':'←';say(human()?`You are at (${gx(me).toFixed(1)}, ${gy(me).toFixed(1)}). Type an equation.`:'Bot is solving…')}
   else say(K[me.kind][0]+' Bot'+(human()?': '+K[me.kind][3]+' Drag to aim.':' is aiming…'));
   if(me.brain)say(`Brain (IQ ${iq(turn)}) is calculating…`);
@@ -342,7 +364,7 @@ function fire(){
   }else{
     const b=+$('bend').value;me.shield=false;anim={...trace(angle,b),i:0};
     const m=Math.tan(angle).toFixed(2),n=(b/100).toFixed(2);
-    say(me.kind=='irr'?`f(x) = ${m}x + ${n}(sin(x/π) + sin(√2·x)/2)`:me.kind=='para'?`x = 0.45t + ${n}·sin t ; y = ${n}(1 − cos t)`:`f(x) = ${n}x² + ${m}x`);
+    say(bk(me.kind)=='irr'?`f(x) = ${m}x + ${n}(sin(x/π) + sin(√2·x)/2)`:bk(me.kind)=='para'?`x = 0.45t + ${n}·sin t ; y = ${n}(1 − cos t)`:`f(x) = ${n}x² + ${m}x`);
   }
   st='fly';if(me.brain)say(`Brain fires: ${nerd()?$('eq').value:K[me.kind][0]}`);
   if(!royale()&&$('game').value!='boss')anim.kills=anim.kills.sort((p,q)=>!!q.king-!!p.king).slice(0,CAP);
@@ -377,8 +399,8 @@ function land(){
   if(a.kills.length){flash=.35;if(navigator.vibrate)navigator.vibrate(40);if(a.kills.length>1)fx.push({x:a.kills[0].x,y:a.kills[0].y-34,vx:0,vy:-.5,l:70,text:'x'+a.kills.length+' COMBO!'})}
   if(turn==0&&mode()=='1'){const n=a.kills.length;save.shots++;if(n){save.hits++;save.kills+=n}if(n>1)ach('dbl');if(n>2)ach('tri');if(n&&a.mines&&a.mines.length)ach('mine');keep()}
   if(a.holes.length)noise(.2,.2,350);
-  for(const h of a.holes)h.r.holes.push({...h.p,r:!nerd()&&me.kind=='bomb'?40:18});
-  if(!nerd()&&me.kind=='parry')me.shield=true;
+  for(const h of a.holes)h.r.holes.push({...h.p,r:!nerd()&&bk(me.kind)=='bomb'?40:18});
+  if(!nerd()&&bk(me.kind)=='parry')me.shield=true;
   if(a.reflect){a.reflect.shield=false;die(me);tone(1500,.4,'sine',900,.18);say('Parried! The shot came straight back.')}
   else if(a.kills.length>1)say(a.kills.length+' down in one shot!');
   if(earning()&&turn==0){const n=a.kills.length;if(n)earn(10*n+5*(n-1),a.kills[0]);
@@ -429,10 +451,10 @@ function frame(now){
   if(run&&!over&&left!=Infinity){left=Math.max(0,left-step);clock();if(!left&&st=='aim')timeUp()}
   if(run&&st=='aim'&&human()&&tw('timer')){tl-=dt;$('tl').textContent='Turn '+Math.max(0,Math.ceil(tl));if(tl<=0)fire()}else if($('tl').textContent!='Time')$('tl').textContent='Time';
   if(run&&st=='aim'&&!human()&&(wait-=step)<0)me.brain?brainStep():think();
-  if(run&&st=='fly'){anim.i+=(nerd()?4:['para','bounce','boom'].includes(me.kind)?5:2)*step*60*(anim.final?.45:1);if(anim.i>=anim.len+20)land()}
+  if(run&&st=='fly'){anim.i+=(nerd()?4:['para','bounce','boom'].includes(bk(me.kind))?5:2)*step*60*(anim.final?.45:1);if(anim.i>=anim.len+20)land()}
   if(run&&st=='rest'&&(wait-=step)<0)next();
   if(run&&$('game').value=='moving'&&(st=='aim'||st=='rest'))for(const r of rocks){if(r.y+r.vy<r.r||r.y+r.vy>S-r.r)r.vy*=-1;r.y+=r.vy;for(const h of r.holes)h.y+=r.vy}
-  const d=devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;
+  const d=.5,w=cv.clientWidth,h=cv.clientHeight;
   if(cv.width!=Math.round(w*d)||cv.height!=Math.round(h*d)){cv.width=Math.round(w*d);cv.height=Math.round(h*d)}
   const tip=st=='fly'&&anim.paths[0][Math.min(Math.floor(anim.i),anim.paths[0].length-1)],goal=tip?{x:tip.x,y:tip.y,z:1.45}:{x:300,y:300,z:1};
   for(const k of 'xyz')cam[k]+=(goal[k]-cam[k])*.07;
@@ -458,7 +480,7 @@ function frame(now){
   if(st=='aim'&&human()&&count<=0){
     g.setLineDash([5,5]);
     if(nerd()){try{if($('eq').value)line(traceEq($('eq').value).paths[0].slice(0,34),'#fff',2)}catch(e){}}
-    else for(const p of trace(angle,+$('bend').value).paths)line(p.slice(0,me.kind=='para'?70:34),K[me.kind][1],2);
+    else for(const p of trace(angle,+$('bend').value).paths)line(p.slice(0,bk(me.kind)=='para'?70:34),K[me.kind][1],2);
     g.setLineDash([]);
   }
   if(anim){
@@ -516,7 +538,7 @@ function shop(){
   for(const [k,[n,cost,info]] of Object.entries(ITEMS))row(`${n} ×${save.inv[k]||0}`,info,'🪙 '+cost,save.coins<cost,()=>{save.coins-=cost;save.inv[k]=(save.inv[k]||0)+1});
   for(const [k,[n,cost]] of Object.entries(SKINS)){const has=save.owned.includes(k);row(n+' skin','Your team color.',save.skin==k?'Equipped':has?'Equip':'🪙 '+cost,save.skin==k||!has&&save.coins<cost,()=>{if(!has){save.coins-=cost;save.owned.push(k)}save.skin=k})}
 }
-function tab(s){$('shop').hidden=!s;$('play').hidden=s;$('tShop').className=s?'on':'';$('tPlay').className=s?'':'on';if(s)shop()}
+function tab(s){$('bld').hidden=s!='b';$('shop').hidden=s!==true;$('play').hidden=!!s;$('tShop').className=s===true?'on':'';$('tBld').className=s=='b'?'on':'';$('tPlay').className=s?'':'on';if(s===true)shop()}
 // ---------- input ----------
 function aim(e,tap){
   if(st!='aim'||!human()||paused||count>0)return;
@@ -549,6 +571,66 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&started&&s
 muted=!!save.muted;$('snd').textContent=muted?'🔇':'🔊';
 {const day=new Date().toDateString();if(save.day!=day){save.day=day;save.coins+=20;document.querySelector('.sub').textContent='Daily bonus: +20 🪙'}}
 reset();st='over';$('big').dataset.msg='';menu();requestAnimationFrame(frame);
+// ---------- swipe pickers + bot import ----------
+const XD={'':'Choose a bot below.',random:'Every bot gets a random weapon.',mixed:'Your team uses a mix of different bots.'};
+function pickers(){document.querySelectorAll('#fields select:not([data-pk])').forEach(s=>{s.dataset.pk=1;s.style.display='none';
+ const w=document.createElement('div');w.className='pk';w._s=s;const L=document.createElement('button'),Q=document.createElement('button'),b=document.createElement('b');
+ L.textContent='◀';Q.textContent='▶';L.setAttribute('aria-label','Previous option');Q.setAttribute('aria-label','Next option');w.append(L,b,Q);s.after(w);
+ const show=()=>{const o=s.options[s.selectedIndex];b.innerHTML=o.text+'<small>'+(s.selectedIndex+1)+' / '+s.options.length+' · swipe or tap</small>';const sm=$(s.id+'d');if(sm&&/^(mine|foe)$/.test(s.id))sm.textContent=K[s.value]?K[s.value][3]:XD[s.value]||''};
+ const go=d=>{s.selectedIndex=(s.selectedIndex+d+s.options.length)%s.options.length;s.dispatchEvent(new Event('change',{bubbles:true}));tone(480+s.selectedIndex*25,.05)};
+ L.onclick=()=>go(-1);Q.onclick=()=>go(1);let x0=null;
+ b.onpointerdown=e=>{x0=e.clientX;try{b.setPointerCapture(e.pointerId)}catch(_){}};b.onpointerup=e=>{if(x0==null)return;const dx=e.clientX-x0;x0=null;go(Math.abs(dx)<24?1:dx<0?1:-1)};
+ s._pk=show;show()})}
+$('fields').addEventListener('change',()=>document.querySelectorAll('.pk').forEach(p=>p._s._pk()));pickers();
+{const d=document.createElement('div');d.style.cssText='display:flex;flex-direction:column;gap:8px';d.innerHTML='<button id="toB">🛠 Skill Builder: make your own bot</button><div class="imp"><input id="impc" placeholder="Paste bot code (GBB1:...)" aria-label="Bot code"><button id="impb">Import</button></div><small id="impm"></small>';$('go').before(d);
+ $('impb').onclick=()=>{try{const c=JSON.parse(decodeURIComponent(escape(atob($('impc').value.trim().replace(/^GBB1:/,'')))));if(!c.name||!K[c.base]||!Array.isArray(c.skills))throw 0;const a=JSON.parse(localStorage.getItem('gbb_custom')||'[]');a.push(c);localStorage.setItem('gbb_custom',JSON.stringify(a.slice(-12)));$('impm').textContent='Imported '+String(c.name).replace(/[^\w ]/g,'')+'! Reloading…';setTimeout(()=>location.reload(),600)}catch(e){$('impm').textContent='That code did not work.'}}}
+function addOpt(id){for(const x of['mine','foe']){const e=$(x),o=new Option(K[id][0]+' Bot',id),q=[...e.options].find(v=>v.value=='random');e.add(o,q)}document.querySelectorAll('.pk').forEach(p=>p._s._pk())}
+(function(){
+const $b=i=>document.getElementById('b_'+i);const KD={},BK=Object.keys(K).filter(k=>!CB[k]);BK.forEach(k=>KD[k]=[K[k][0],K[k][1],K[k][3]]);
+const TR=[['Never','none','Empty slot.',0],['First turn','first','Runs on your first turn only.',0],['Every 3rd turn','third','Runs on turns 3, 6, 9...',0],['When behind','behind','Runs when your team has fewer bots left.',1],['Last bot standing','last','Runs when you are the only bot left.',0],['Every turn','always','Runs on every turn. Costs the most.',3]];
+const EF=[['Nothing','none','Empty slot.',0],['👻 Ghost','ghost','Your shot passes through circles.',3],['🎯 Wide hit','wide','Bigger hit zone on your shot.',2],['💥 Blast','blast','Explosion where the shot ends.',3]];
+const BODY=[['Yellow','#ffe433'],['Blue','#35c3ff'],['Mint','#4dffb0'],['Pink','#ff6fc4'],['Lime','#b6ff3c'],['Violet','#b388ff'],['Red','#ff4d4d'],['Orange','#ff9a2e'],['Ice','#bff4ff'],['Gold','#ffd84d']];
+const CAP=[['Purple cap','#3d2275'],['Red cap','#a31f34'],['Green cap','#1f7a3d'],['Navy cap','#1f3a7a'],['No cap','']];
+const ACC=['None','Crown','Antenna','Horns'],MOU=['None','Smile','Round','Flat'],MAX=10;
+let B={base:BK[0],body:0,cap:0,acc:0,mouth:0,sk:[[3,1],[1,2],[0,0]]};const cars=[];
+function car(host,label,items,get,set){const d=document.createElement('div');d.className='car';d.innerHTML='<div class="lab">'+label+'</div><div class="pk"><button aria-label="Previous">◀</button><b></b><button aria-label="Next">▶</button></div><small></small>';
+ const [L,b,Q]=d.querySelectorAll('.pk>*'),sm=d.querySelector('small');
+ d._s=()=>{const it=items[get()];b.textContent=it[0]+(it[3]?'  ('+it[3]+' pt)':'');sm.textContent=it[2]||''};
+ const go=k=>{set((get()+k+items.length)%items.length);ref()};L.onclick=()=>go(-1);Q.onclick=()=>go(1);let x=null;
+ b.onpointerdown=e=>{x=e.clientX;try{b.setPointerCapture(e.pointerId)}catch(_){}};b.onpointerup=e=>{if(x==null)return;const dx=e.clientX-x;x=null;go(Math.abs(dx)<24?1:dx<0?1:-1)};
+ host.append(d);cars.push(d)}
+const L1=a=>a.map(v=>[v[0]||v,v[1]||v,'',0]);
+car($b('look'),'Body color',BODY.map(c=>[c[0],c[1],'',0]),()=>B.body,v=>B.body=v);
+car($b('look'),'Cap',CAP.map(c=>[c[0],c[1],'',0]),()=>B.cap,v=>B.cap=v);
+car($b('look'),'Accessory',ACC.map(a=>[a,a,'',0]),()=>B.acc,v=>B.acc=v);
+car($b('look'),'Mouth',MOU.map(a=>[a,a,'',0]),()=>B.mouth,v=>B.mouth=v);
+car($b('wep'),'Weapon',BK.map(k=>[KD[k][0]+' Bot',k,KD[k][2],0]),()=>BK.indexOf(B.base),v=>B.base=BK[v]);
+B.sk.forEach((s,i)=>{const h=document.createElement('div');h.className='slot';h.innerHTML='<h2>Skill '+(i+1)+'</h2>';$b('sk').append(h);
+ car(h,'WHEN',TR,()=>s[0],v=>s[0]=v);car(h,'DO',EF,()=>s[1],v=>s[1]=v)});
+const cost=()=>B.sk.reduce((t,s)=>t+(s[1]?TR[s[0]][3]+EF[s[1]][3]:0),0);
+function spr(){const n=32,im=new ImageData(n,n),px=im.data,rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)),mix=(a,b,t)=>a.map((v,i)=>Math.round(v+(b[i]-v)*t));
+ const put=(x,y,c)=>{if(x<0||y<0||x>=n||y>=n)return;const o=(y*n+x)*4;px[o]=c[0];px[o+1]=c[1];px[o+2]=c[2];px[o+3]=255},W=[255,255,255],K=[0,0,0],O=[42,26,10],bd=rgb(BODY[B.body][1]),cp=CAP[B.cap][1]?rgb(CAP[B.cap][1]):null,pal=[mix(bd,W,.6),bd,mix(bd,K,.22)];
+ for(let y=0;y<n;y++)for(let x=0;x<n;x++){const d=Math.hypot(x-15.5,y-17.5);if(d>13.8)continue;if(d>12.5){put(x,y,O);continue}
+  const l=Math.hypot(x-10,y-20);let c=l<5?pal[0]:l<15?pal[1]:pal[2];if(((x-20)/6.6)**2+((y-14.5)/4.6)**2<=1)c=W;if(((x-23.2)/2.2)**2+((y-14.5)/3.3)**2<=1)c=[20,14,30];
+  if(cp){const yb=16-.18*x;if(y<yb)c=y>yb-2?mix(cp,K,.55):(d>8&&x+y<24)?mix(cp,W,.3):cp}put(x,y,c)}
+ const mo=[[],[[12,25],[13,26],[14,26],[15,26],[16,26],[17,25]],[[14,25],[15,24],[16,25],[15,26]],[[12,25],[13,25],[14,25],[15,25],[16,25]]][B.mouth];mo.forEach(q=>put(q[0],q[1],O));
+ const G=[255,216,77];if(B.acc==1){for(let x=10;x<=21;x++)for(let y=2;y<=5;y++)put(x,y,G);[10,14,17,21].forEach(x=>{put(x,1,G);put(x,0,G)})}
+ if(B.acc==2){for(let y=1;y<=5;y++)put(15,y,O);[[15,0],[16,0],[15,-1]].forEach(q=>put(q[0],q[1],[255,70,70]))}
+ if(B.acc==3)[[7,5],[7,4],[8,3],[8,2],[24,5],[24,4],[23,3],[23,2]].forEach(q=>put(q[0],q[1],[230,230,240]));
+ const o=document.createElement('canvas');o.width=o.height=n;o.getContext('2d').putImageData(im,0,0);const g=$b('cv').getContext('2d');g.imageSmoothingEnabled=false;g.clearRect(0,0,192,192);g.drawImage(o,0,0,192,192)}
+function ref(){cars.forEach(c=>c._s());const c=cost();$b('pts').textContent=c+' / '+MAX;$b('pts').className=c>MAX?'bad':'';$b('sv').disabled=c>MAX;
+ const L=B.sk.filter(s=>s[1]).map(s=>'WHEN '+TR[s[0]][1]+'\n  DO '+EF[s[1]][1]);$b('prog').textContent='SHOOT '+KD[B.base][0].toUpperCase()+' CURVE\n'+(L.length?L.join('\n'):'(no skills yet)');spr()}
+function out(){const sk=B.sk.filter(s=>s[1]).map(s=>({when:TR[s[0]][1],do:EF[s[1]][1]}));
+ return{name:($b('nm').value||'My Bot').replace(/[^\w ]/g,'').slice(0,14)||'My Bot',base:B.base,color:BODY[B.body][1],skills:sk,desc:(KD[B.base][0]+' shot. '+sk.map(s=>TR.find(t=>t[1]==s.when)[0]+': '+EF.find(e=>e[1]==s.do)[0]).join('. ')).slice(0,140)}}
+$b('sv').onclick=()=>{const o=out();$b('code').value='GBB1:'+btoa(unescape(encodeURIComponent(JSON.stringify(o))));
+ try{const a=JSON.parse(localStorage.getItem('gbb_custom')||'[]');a.push(o);localStorage.setItem('gbb_custom',JSON.stringify(a.slice(-12)))}catch(e){}
+ const id=regC(o,Date.now()%1e6);if(id){addOpt(id);$b('msg').textContent=o.name+' saved! Pick it in Play as Your bot or Enemy bot.'}else $b('msg').textContent='Could not save this bot.'};
+$b('cp').onclick=async()=>{try{await navigator.clipboard.writeText($b('code').value);$b('msg').textContent='Code copied.'}catch(e){$b('code').select();$b('msg').textContent='Press and hold to copy the code.'}};
+$b('clr').onclick=()=>{try{localStorage.removeItem('gbb_custom')}catch(e){}location.reload()};
+ref();
+
+$b('play').onclick=()=>tab(false);$('toB').onclick=()=>tab('b');
+})();
 </script>
 <script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
